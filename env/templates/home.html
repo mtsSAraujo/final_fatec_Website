@@ -1,0 +1,25 @@
+{% extends "base.html" %} {% block title %}Home{% endblock %} {% block content
+    %}
+    <div class="container">
+        <h1>Bem-vindo à plataforma</h1>
+
+        {% if user.is_authenticated %}
+            {% if session.get('user_type') == 'professor' %}
+                <div class="actions">
+                    <h2>Painel do Professor</h2>
+                    <p>Bem-vindo, professor! Aqui você pode gerenciar cursos e disciplinas.</p>
+                    <a href="/cursos/cadastro" class="btn btn-primary">Cadastrar Curso</a>
+                    <a href="/disciplinas/cadastro" class="btn btn-primary">Cadastrar Disciplina</a>
+                </div>
+            {% elif session.get('user_type') == 'aluno' %}
+                <div class="actions">
+                    <h2>Painel do Aluno</h2>
+                    <p>Bem-vindo, aluno! Explore os cursos e disciplinas disponíveis.</p>
+                </div>
+            {% endif %}
+        {% else %}
+            <p>Para acessar todos os recursos, faça o login.</p>
+            <a href="/login" class="btn btn-secondary">Login</a>
+        {% endif %}
+    </div>
+    {% endblock %}

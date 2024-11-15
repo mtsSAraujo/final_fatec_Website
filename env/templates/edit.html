@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+{% block title %}Editar {{ tipo.capitalize() }}{% endblock %}
+{% block content %}
+
+<div class="container">
+    <h1>Editar {{ tipo.capitalize() }}</h1>
+    
+    <form action="{{ url_for('auth.edit', tipo=tipo, item_id=item.id) }}" method="POST">
+        
+        {% if tipo == 'aluno' %}
+            <!-- Campos para Aluno -->
+            <div class="form-group">
+                <label for="user">Usuário de login</label>
+                <input type="text" id="user" name="user" class="form-control" value="{{ item.usuario }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="nome">Nome</label>
+                <input type="text" id="nome" name="nome" class="form-control" value="{{ item.nome }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="cpf">CPF</label>
+                <input type="text" id="cpf" name="cpf" class="form-control" value="{{ item.cpf }}" required>
+            </div>
+
+            <script>
+                document.getElementById("cpf").addEventListener("input", function (e) {
+                    let value = e.target.value.replace(/[^0-9]/g, '');
+                    if (value.length <= 3) {
+                        e.target.value = value;
+                    } else if (value.length <= 6) {
+                        e.target.value = value.slice(0, 3) + '.' + value.slice(3);
+                    } else if (value.length <= 9) {
+                        e.target.value = value.slice(0, 3) + '.' + value.slice(3, 6) + '.' + value.slice(6);
+                    } else {
+                        e.target.value = value.slice(0, 3) + '.' + value.slice(3, 6) + '.' + value.slice(6, 9) + '-' + value.slice(9, 11);
+                    }
+                });
+            </script>
+
+            <div class="form-group">
+                <label for="cep">CEP</label>
+                <input type="text" id="cep" name="cep" class="form-control" value="{{ item.endereco.cep }}" maxlength="9" oninput="buscarEnderecoPorCEP()" required>
+            </div>
+
+            <div class="form-group">
+                <label for="rua">Rua</label>
+                <input type="text" id="rua" name="rua" class="form-control" value="{{ item.endereco.rua }}" readonly>
+            </div>
+
+            <div class="form-group">
+                <label for="numero">Número</label>
+                <input type="text" id="numero" name="numero" class="form-control" value="{{ item.endereco.numero }}">
+            </div>
+
+            <div class="form-group">
+                <label for="bairro">Bairro</label>
+                <input type="text" id="bairro" name="bairro" class="form-control" value="{{ item.endereco.bairro }}" readonly>
+            </div>
+
+            <div class="form-group">
+                <label for="complemento">Complemento</label>
+                <input type="text" id="complemento" name="complemento" class="form-control" value="{{ item.endereco.complemento }}">
+            </div>
+
+            <!-- Script para buscar endereço via CEP -->
+            <script>
+                function buscarEnderecoPorCEP() {
+                    const cep = document.getElementById("cep").value;
+                    if (cep.length === 9) {
+                        fetch(`https://viacep.com.br/ws/${cep}/json/`)
+                            .then(response => response.json())
+                            .then(data => {
+                                if (!data.erro) {
+                                    document.getElementById("rua").value = data.logradouro;
+                                    document.getElementById("bairro").value = data.bairro;
+                                } else {
+                                    alert("CEP não encontrado.");
+                                }
+                            })
+                            .catch(error => console.error("Erro ao buscar endereço:", error));
+                    }
+                }
+            </script>
+            
+            <div class="form-group">
+                <label for="course">Curso</label>
+                <select class="form-control" id="course" name="course" onchange="displayDisciplinas()">
+                    <option value=""> --- Selecione um curso --- </option>
+                    {% for curso in cursos %}
+                        <!-- Curso selecionado baseado no curso_id do item -->
+                        <option value="{{ curso.id }}" {{ 'selected' if curso.id == item.curso_id else '' }}>{{ curso.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+
+            <!-- Lista de Disciplinas do Curso -->
+            <div id="disciplinas-list" class="mt-3"></div>
+
+            <script>
+                const cursos = JSON.parse(document.getElementById('cursos-data').getAttribute('data-cursos'));
+
+                function displayDisciplinas() {
+                    const selectedCourseId = document.getElementById("course").value;
+                    const disciplinasListDiv = document.getElementById("disciplinas-list");
+                    disciplinasListDiv.innerHTML = "";
+
+                    if (selectedCourseId && cursos[selectedCourseId]) {
+                        const disciplinas = cursos[selectedCourseId];
+                        const listHtml = disciplinas.map(d => 
+                            `<li>${d.nome} - Carga Horária: ${d.carga_horaria} horas</li>`
+                        ).join("");
+
+                        disciplinasListDiv.innerHTML = `
+                            <h5>Disciplinas:</h5>
+                            <ul>${listHtml}</ul>
+                        `;
+                    }
+                }
+            </script>
+
+        {% elif tipo == 'professor' %}
+
+            <div class="form-group">
+                <label for="user">Usuário de login</label>
+                <input type="text" id="user" name="user" class="form-control" value="{{ item.usuario }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="nome">Nome</label>
+                <input type="text" id="nome" name="nome" class="form-control" value="{{ item.nome }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="phone">Telefone</label>
+                <input type="text" id="phone" name="phone" class="form-control" value="{{ item.telefone }}" placeholder="(XX)XXXXX-XXXX">
+            </div>
+
+            <div class="form-group">
+                <label for="disciplines">Disciplinas Ministradas</label>
+                <select class="form-control" id="disciplines" name="disciplines" multiple>
+                    {% for discipline in disciplines %}
+                        <option value="{{ discipline.id }}" {% if discipline in item.disciplina_ministrada %}selected{% endif %}>
+                            {{ discipline.nome }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <small class="form-text text-muted">Segure Ctrl (ou Command) para selecionar múltiplas disciplinas.</small>
+            </div>
+
+            <script>
+                // Função para aplicar a máscara de telefone
+                document.getElementById('phone').addEventListener('input', function (e) {
+                    let x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,5})(\d{0,4})/);
+                    e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
+                });
+            </script>
+
+        {% elif tipo == 'curso' %}
+            <div id="cursos-data" data-cursos='{{ cursos_data | tojson }}' style="display: none;"></div>
+
+            <!-- Campos para Curso -->
+            <div class="form-group">
+                <label for="nome">Nome do Curso</label>
+                <input type="text" id="nome" name="nome" class="form-control" value="{{ item.nome }}" required>
+            </div>
+            
+            <!-- Tabela para listagem de disciplinas -->
+            <div id="disciplinas-list" class="mt-3">Disciplinas</div>
+            <div id="curso-id" data-curso-id="{{ item.id }}"></div>
+            
+            <script>
+                const cursosJS = JSON.parse(document.getElementById('cursos-data').getAttribute('data-cursos'));
+            
+                const disciplinasListDiv = document.getElementById("disciplinas-list");
+            
+                const curso_id = document.getElementById('curso-id').getAttribute('data-curso-id');
+                console.log("ID do curso carregado:", curso_id);
+            
+                // Função para exibir as disciplinas do curso selecionado
+                function displayDisciplinas() {
+                    const selectedCourseId = curso_id;
+                    const disciplinasListDiv = document.getElementById("disciplinas-list");
+            
+                    // Limpa o conteúdo anterior
+                    disciplinasListDiv.innerHTML = "";
+
+                    const disciplinas = cursosJS[selectedCourseId];
+                    console.log("Disciplinas carregadas:", disciplinas);
+            
+                    // Cria a tabela de disciplinas com caixas de seleção
+                    const tableHtml = `
+                        <h5>Disciplinas:</h5>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Selecionar</th>
+                                    <th>Nome</th>
+                                    <th>Carga Horária</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${disciplinas.map(d => {
+                                    const isSelected = d.associado ? 'selected-discipline' : '';
+                                    return `
+                                        <tr class="${isSelected}">
+                                            <td>
+                                                <input type="checkbox" name="disciplinas" value="${d.id}" ${d.associado ? 'checked' : ''} onclick="toggleDisciplineSelection(this)">
+                                            </td>
+                                            <td>${d.nome}</td>
+                                            <td>${d.carga_horaria} horas</td>
+                                        </tr>
+                                    `;
+                                }).join("")}
+                            </tbody>
+                        </table>
+                    `;
+            
+                    disciplinasListDiv.innerHTML = tableHtml;
+                }
+            
+                // Função para alternar a seleção de disciplina
+                function toggleDisciplineSelection(checkbox) {
+                    const row = checkbox.closest('tr');
+                    if (checkbox.checked) {
+                        row.classList.add('selected-discipline');
+                    } else {
+                        row.classList.remove('selected-discipline');
+                    }
+                }
+            
+                displayDisciplinas();
+            </script>
+            
+            <style>
+                /* Estilo para destacar disciplinas já associadas */
+                .selected-discipline {
+                    background-color: #d4edda;
+                }
+            </style>
+        
+        {% elif tipo == 'disciplina' %}
+            <div class="form-group">
+                <label for="nome">Nome da Disciplina</label>
+                <input type="text" id="nome" name="nome" class="form-control" value="{{ item.nome }}" required>
+            </div>
+        
+            <div class="form-group">
+                <label for="carga_horaria">Carga Horária</label>
+                <input type="number" id="carga_horaria" name="carga_horaria" class="form-control" value="{{ item.carga_horaria }}" required>
+            </div>
+        {% else %}
+            <p>Tipo de item desconhecido.</p>
+        {% endif %}
+        
+        <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+        <a href="{{ url_for('views.' + tipo + 's') }}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+
+{% endblock %}

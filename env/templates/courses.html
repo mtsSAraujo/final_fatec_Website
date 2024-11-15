@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% block title %}Cursos{% endblock %}
+{% block content %}
+
+<style>
+    /* Estilos gerais */
+    .container {
+        max-width: 800px;
+        margin: auto;
+        padding: 20px;
+    }
+
+    .table-container {
+        border-collapse: collapse;
+        width: 100%;
+        margin-top: 20px;
+    }
+
+    .table-container th, .table-container td {
+        border: 1px solid #ddd;
+        padding: 10px;
+    }
+
+    .table-container th {
+        background-color: #f2f2f2;
+        text-align: left;
+    }
+
+    .course-name-box {
+        padding: 15px;
+        cursor: pointer;
+        font-weight: bold;
+        text-align: center;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        transition: background-color 0.3s;
+    }
+
+    .course-name-box:hover {
+        background-color: #e2e6ea;
+    }
+
+    .highlight {
+        background-color: #d4edda; /* Cor de fundo verde para cursos onde o aluno está matriculado */
+    }
+
+    .collapse-content {
+        display: none; /* Inicialmente oculto */
+    }
+
+    .dropdown-icon {
+        float: right;
+        font-size: 14px;
+        transition: transform 0.3s;
+    }
+
+    .dropdown-icon.open {
+        transform: rotate(180deg);
+    }
+</style>
+
+<script>
+    // Função para filtrar os cursos enquanto o usuário digita
+    function filterCourses() {
+        let input = document.getElementById('courseSearch').value.toLowerCase();
+        let rows = document.querySelectorAll('.course-row');
+        
+        rows.forEach(row => {
+            let courseName = row.querySelector('.course-name-box').textContent.toLowerCase();
+            row.style.display = courseName.includes(input) ? '' : 'none';
+        });
+    }
+
+    // Função para expandir/colapsar disciplinas com um único clique
+    function toggleCollapse(courseId) {
+        let content = document.getElementById('collapse-' + courseId);
+        let icon = document.getElementById('icon-' + courseId);
+
+        if (content.style.display === 'table-row') {
+            content.style.display = 'none';
+            icon.classList.remove('open');
+        } else {
+            content.style.display = 'table-row';
+            icon.classList.add('open');
+        }
+    }
+</script>
+
+<div class="container">
+    <h1>Lista de Cursos</h1>
+
+    <!-- Campo de busca -->
+    <input type="text" id="courseSearch" onkeyup="filterCourses()" placeholder="Buscar cursos..." class="form-control">
+
+    <!-- Tabela de cursos -->
+    <table class="table-container">
+        <thead>
+            <tr>
+                <th>Nome do Curso</th>
+                <th>Carga Horária Total</th>
+                {% if user.is_authenticated and session.get('user_type') == 'professor' %}
+                    <th>Ações</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for course in courses %}
+            <tr class="course-row">
+                <!-- Caixa do nome do curso -->
+                <td>
+                    <div class="course-name-box {% if user.is_authenticated and session.get('user_type') == 'aluno' and course.id == enrolled_course_id %}highlight{% endif %}">
+                        {{ course.nome }}
+                        <span id="icon-{{ course.id }}" class="dropdown-icon" onclick="toggleCollapse('{{ course.id }}')">&#9660;</span>
+                    </div>
+                </td>
+
+                <td>{{ course.calcula_carga_horaria() }} horas</td>
+                
+                <!-- Ações para professores -->
+                {% if user.is_authenticated and session.get('user_type') == 'professor' %}
+                    <td class="action-buttons">
+                        <a href="{{ url_for('auth.edit', tipo='curso', item_id=course.id) }}" class="btn btn-secondary">Editar</a>
+        
+                        <form action="{{ url_for('auth.delete', tipo='curso', item_id=course.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Tem certeza que deseja excluir este curso?')">
+                            <button type="submit" class="btn btn-danger">Excluir</button>
+                        </form>
+                    </td>
+                {% endif %}
+            </tr>
+            
+            <!-- Tabela colapsada com disciplinas do curso -->
+            <tr id="collapse-{{ course.id }}" class="collapse-content">
+                <td colspan="2">
+                    <table class="table-container">
+                        <thead>
+                            <tr>
+                                <th>Disciplinas</th>
+                                <th>Carga Horária</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for disciplina in course.disciplinas %}
+                            <tr>
+                                <td>{{ disciplina.nome }}</td>
+                                <td>{{ disciplina.carga_horaria }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Botão para adicionar curso (disponível apenas para professores) -->
+    {% if user.is_authenticated and session.get('user_type') == 'professor' %}
+        <div class="add-course" style="margin-top: 20px;">
+            <a href="{{ url_for('auth.new_course') }}" class="btn btn-primary">Adicionar Novo Curso</a>
+        </div>
+    {% endif %}
+</div>
+
+{% endblock %}

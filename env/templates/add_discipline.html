@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Criar Nova Disciplina{% endblock %}
+{% block content %}
+
+<div class="container">
+    <h1>Criar Nova Disciplina</h1>
+    
+    {% if user.is_authenticated and session.get('user_type') == 'professor' %}
+        <form action="{{ url_for('auth.new_discipline') }}" method="POST">
+            <div class="form-group">
+                <label for="nome">Nome da Disciplina</label>
+                <input type="text" id="nome" name="nome" class="form-control" placeholder="Insira o nome da disciplina" required>
+            </div>
+
+            <div class="form-group">
+                <label for="carga_horaria">Carga Horária</label>
+                <input type="number" id="carga_horaria" name="carga_horaria" class="form-control" placeholder="Insira a carga horária em horas" required>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Salvar Disciplina</button>
+            <a href="{{ url_for('views.disciplinas') }}" class="btn btn-secondary">Cancelar</a>
+        </form>
+    {% else %}
+        <p class="text-danger">Apenas professores podem cadastrar novas disciplinas.</p>
+    {% endif %}
+</div>
+
+{% endblock %}

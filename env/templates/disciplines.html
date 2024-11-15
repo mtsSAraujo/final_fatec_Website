@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Disciplinas{% endblock %}
+{% block content %}
+
+<div class="container">
+    <h1>Lista de Disciplinas</h1>
+
+    <input type="text" id="disciplineSearch" onkeyup="filterDisciplines()" placeholder="Buscar disciplinas..." class="form-control mt-3 mb-3">
+
+    <table class="table table-striped mt-4">
+        <thead>
+            <tr>
+                <th>Nome da Disciplina</th>
+                <th>Carga Horária</th>
+                {% if user.is_authenticated and session.get('user_type') == 'professor' %}
+                    <th>Ações</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody id="disciplineTable">
+            {% for disciplina in disciplines %}
+                <tr>
+                    <td>{{ disciplina.nome }}</td>
+                    <td>{{ disciplina.carga_horaria }} horas</td>
+                    
+                    <!-- Ações para professores -->
+                    {% if user.is_authenticated and session.get('user_type') == 'professor' %}
+                        <td class="action-buttons">
+                            <a href="{{ url_for('auth.edit', tipo='disciplina', item_id=disciplina.id) }}" class="btn btn-secondary btn-sm">Editar</a>
+                            <form action="{{ url_for('auth.delete', tipo='disciplina', item_id=disciplina.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Tem certeza que deseja excluir esta disciplina?')">
+                                <button type="submit" class="btn btn-danger btn-sm">Excluir</button>
+                            </form>
+                        </td>
+                    {% endif %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if user.is_authenticated and session.get('user_type') == 'professor' %}
+        <div class="mt-4">
+            <a href="{{ url_for('auth.new_discipline') }}" class="btn btn-primary">Adicionar Nova Disciplina</a>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+    // Função para filtrar as disciplinas conforme o usuário digita no campo de busca
+    function filterDisciplines() {
+        let input = document.getElementById('disciplineSearch').value.toLowerCase();
+        let rows = document.querySelectorAll('#disciplineTable tr');
+        
+        rows.forEach(row => {
+            let disciplineName = row.cells[0].textContent.toLowerCase();
+            row.style.display = disciplineName.includes(input) ? '' : 'none';
+        });
+    }
+</script>
+
+{% endblock %}

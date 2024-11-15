@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}Alunos{% endblock %}
+{% block content %}
+
+<style>
+    /* Estilos gerais */
+    .container {
+        max-width: 800px;
+        margin: auto;
+        padding: 20px;
+    }
+
+    .table-container {
+        border-collapse: collapse;
+        width: 100%;
+        margin-top: 20px;
+    }
+
+    .table-container th, .table-container td {
+        border: 1px solid #ddd;
+        padding: 10px;
+    }
+
+    .table-container th {
+        background-color: #f2f2f2;
+        text-align: left;
+    }
+
+    .student-name-box {
+        padding: 15px;
+        cursor: pointer;
+        font-weight: bold;
+        text-align: center;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        transition: background-color 0.3s;
+    }
+
+    .student-name-box:hover {
+        background-color: #e2e6ea;
+    }
+
+    .collapse-content {
+        display: none; /* Inicialmente oculto */
+    }
+
+    .dropdown-icon {
+        float: right;
+        font-size: 14px;
+        transition: transform 0.3s;
+    }
+
+    .dropdown-icon.open {
+        transform: rotate(180deg);
+    }
+</style>
+
+<script>
+    function filterStudents() {
+        let input = document.getElementById('studentSearch').value.toLowerCase();
+        let rows = document.querySelectorAll('.student-row');
+        
+        rows.forEach(row => {
+            let courseName = row.querySelector('.student-name-box').textContent.toLowerCase();
+            row.style.display = courseName.includes(input) ? '' : 'none';
+        });
+    }
+    // Função para expandir/colapsar informações do aluno
+    function toggleStudentInfo(studentId) {
+        let content = document.getElementById('collapse-student-' + studentId);
+        let icon = document.getElementById('icon-' + studentId);
+
+        if(content.style.display === "table-row") {
+            content.style.display = 'none'
+            icon.classList.remove('open');
+        } else {
+            content.style.display = 'table-row'
+            icon.classList.add('open');
+        }
+    }
+</script>
+
+<div class="container">
+    <h1>Lista de Alunos</h1>
+
+    <input type="text" id="studentSearch" onkeyup="filterStudents()" placeholder="Buscar cursos..." class="form-control">
+
+    <!-- Tabela de alunos -->
+    <table class="table-container">
+        <thead>
+            <tr>
+                <th>Nome do Aluno</th>
+                {% if user.is_authenticated and session.get('user_type') == 'professor' %}
+                    <th>Ações</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for student in students %}
+            <tr class="student-row">
+                <!-- Caixa do nome do aluno -->
+                <td>
+                    <div class="student-name-box">
+                        {{ student.nome }}
+                        <span id="icon-{{ student.id }}" class="dropdown-icon" onclick="toggleStudentInfo('{{ student.id }}')">&#9660;</span>
+                    </div>
+                </td>
+
+                <!-- Ações para professores -->
+                {% if user.is_authenticated and session.get('user_type') == 'professor' %}
+                    <td class="action-buttons">
+                        <a href="{{ url_for('auth.edit', tipo='aluno', item_id=student.id) }}" class="btn btn-secondary">Editar</a>
+                        <form action="{{ url_for('auth.delete', tipo ='aluno', item_id=student.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Tem certeza que deseja excluir este aluno?')">
+                            <button type="submit" class="btn btn-danger">Excluir</button>
+                        </form>
+                    </td>
+                {% endif %}
+            </tr>
+
+            <!-- Informações detalhadas do aluno em colapso -->
+            <tr id="collapse-student-{{ student.id }}" class="collapse-content">
+                <td colspan="2">
+                    <table class="table-container">
+                        <thead>
+                            <tr>
+                                <th>Curso</th>
+                                <th>Usuário</th>
+                                <th>CPF</th>
+                                <th>Endereço</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>{{ student.curso.nome }}</td>
+                                <td>{{ student.usuario }}</td>
+                                <td>{{ student.cpf }}</td>
+                                <td>{{ student.endereco.cep }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Botão para adicionar aluno (disponível apenas para professores) -->
+    {% if user.is_authenticated and session.get('user_type') == 'professor' %}
+        <div class="add-student" style="margin-top: 20px;">
+            <a href="/signup/aluno" class="btn btn-primary">Adicionar Novo Aluno</a>
+        </div>
+    {% endif %}
+</div>
+
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Adicionar Curso{% endblock %}
+{% block content %}
+
+<div class="container">
+    <h1>Adicionar Novo Curso</h1>
+    
+    <form action="{{ url_for('auth.new_course') }}" method="POST">
+        
+        <!-- Campo para Nome do Curso -->
+        <div class="form-group">
+            <label for="nome">Nome do Curso</label>
+            <input type="text" id="nome" name="nome" class="form-control" placeholder="Insira o nome do curso" required>
+        </div>
+
+        <!-- Div oculta para armazenar as disciplinas em JSON -->
+        <div id="disciplinas-data" data-disciplinas='{{ disciplinas_data | tojson }}' style="display: none;"></div>
+
+        <!-- Tabela para Seleção de Disciplinas -->
+        <div id="disciplinas-list" class="mt-3">Disciplinas</div>
+
+        <script>
+            // Extrai as disciplinas do elemento oculto
+            const disciplinasData = JSON.parse(document.getElementById('disciplinas-data').getAttribute('data-disciplinas'));
+
+            // Função para exibir a lista de disciplinas
+            function displayDisciplinas() {
+                const disciplinasListDiv = document.getElementById("disciplinas-list");
+                disciplinasListDiv.innerHTML = "";
+
+                // Cria a tabela de disciplinas com caixas de seleção
+                const tableHtml = `
+                    <h5>Disciplinas:</h5>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Selecionar</th>
+                                <th>Nome</th>
+                                <th>Carga Horária</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${disciplinasData.map(d => `
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" name="disciplinas" value="${d.id}">
+                                    </td>
+                                    <td>${d.nome}</td>
+                                    <td>${d.carga_horaria} horas</td>
+                                </tr>
+                            `).join("")}
+                        </tbody>
+                    </table>
+                `;
+                
+                disciplinasListDiv.innerHTML = tableHtml;
+            }
+
+            // Inicializa a exibição das disciplinas
+            displayDisciplinas();
+        </script>
+
+        <style>
+            /* Estilo para destacar disciplinas selecionadas */
+            .selected-discipline {
+                background-color: #d4edda;
+            }
+        </style>
+        
+        <button type="submit" class="btn btn-primary">Adicionar Curso</button>
+        <a href="{{ url_for('views.cursos') }}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+
+{% endblock %}
